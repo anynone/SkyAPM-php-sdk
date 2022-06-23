@@ -18,7 +18,8 @@
 
 #include "sky_plugin_error.h"
 #include "php_skywalking.h"
-#include "segment.h"
+#include "sky_core_segment.h"
+#include "sky_utils.h"
 #include <string>
 
 #if PHP_VERSION_ID < 80000
@@ -27,12 +28,18 @@ extern void (*orig_error_cb)(int type, const char *error_filename, const uint er
 void (*orig_error_cb)(int type, const char *error_filename, const uint error_lineno, const char *format, va_list args) = nullptr;
 
 void sky_plugin_error_cb(int type, const char *error_filename, const uint error_lineno, const char *format, va_list args) {
-#else
+#elif PHP_VERSION_ID >= 80000 && PHP_VERSION_ID < 80100
 extern void (*orig_error_cb)(int type, const char *error_filename, const uint32_t error_lineno, zend_string *message);
 
 void (*orig_error_cb)(int type, const char *error_filename, const uint32_t error_lineno, zend_string *message) = nullptr;
 
 void sky_plugin_error_cb(int type, const char *error_filename, const uint32_t error_lineno, zend_string *message) {
+#else
+extern void (*zend_error_cb)(int type, zend_string *error_filename, const uint32_t error_lineno, zend_string *message);
+
+void (*orig_error_cb)(int type, zend_string *error_filename, const uint32_t error_lineno, zend_string *message) = nullptr;
+
+void sky_plugin_error_cb(int type, zend_string *error_filename, const uint32_t error_lineno, zend_string *message) {
 #endif
     std::string level;
     bool isError = EG(error_reporting) & type;
@@ -62,8 +69,11 @@ void sky_plugin_error_cb(int type, const char *error_filename, const uint32_t er
             level = "E_" + std::to_string(type);		
             break;
     }
-
+#if PHP_VERSION_ID >= 80100
+    std::string log = ZSTR_VAL(error_filename);
+#else
     std::string log = error_filename;
+#endif
 #if PHP_VERSION_ID < 80000
     char *msg;
     va_list args_copy;
@@ -77,17 +87,20 @@ void sky_plugin_error_cb(int type, const char *error_filename, const uint32_t er
 #endif
 
     if (!SKYWALKING_G(is_swoole) && SKYWALKING_G(enable) && SKYWALKING_G(segment) != nullptr) {
-        auto *segments = static_cast<std::map<uint64_t, Segment *> *>SKYWALKING_G(segment);
-        auto segment = segments->at(0);
-        auto span = segment->firstSpan();
-        span->addLog(level, log);
-        if (isError) {
-            span->setIsError(true);
+        auto segment = sky_get_segment(0);
+         if (segment != nullptr) {
+            auto span = segment->firstSpan();
+            span->addLog(level, log);
+            if (isError) {
+                span->setIsError(true);
+            }
         }
     }
 
 #if PHP_VERSION_ID < 80000
     orig_error_cb(type, error_filename, error_lineno, format, args);
+#elif PHP_VERSION_ID >= 80000 && PHP_VERSION_ID < 80100
+    orig_error_cb(type, error_filename, error_lineno, message);
 #else
     orig_error_cb(type, error_filename, error_lineno, message);
 #endif
