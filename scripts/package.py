@@ -16,7 +16,7 @@
 import xml.dom.minidom
 import time, os
 
-version = '4.2.0'
+version = '5.0.0'
 
 git = os.popen('git ls-files')
 res = git.read()
@@ -79,7 +79,7 @@ config = [
     {'key': 'license', 'value': 'Apache2.0', 'attr': [
         {'key': 'uri', 'value': 'http://www.apache.org/licenses/LICENSE-2.0.html'}
     ]},
-    {'key': 'notes', 'value': 'Fix bugs'}, # release notes
+    {'key': 'notes', 'value': 'Support Skywalking 9.0.0'}, # release notes
     {'key': 'contents', 'child': [
         {'key': 'dir', 'attr': [
             {'key': 'name', 'value': '/'},
@@ -100,18 +100,32 @@ config = [
     {'key': 'changelog', 'child': [
         {'key': 'release', 'child': [
             {'key': 'version', 'child': [
-                {'key': 'release', 'value': '4.2.0'},
-                {'key': 'api', 'value': '4.2.0'}
-            ]
-             },
+                    {'key': 'release', 'value': '5.0.0'},
+                    {'key': 'api', 'value': '5.0.0'}
+                ]
+            },
             {'key': 'stability', 'child': [
-                {'key': 'release', 'value': 'stable'},
-                {'key': 'api', 'value': 'stable'}
+                    {'key': 'release', 'value': 'stable'},
+                    {'key': 'api', 'value': 'stable'}
+                ]
+            },
+                {'key': 'notes', 'value': 'Support Skywalking 9.0.0'}
             ]
-             },
-            {'key': 'notes', 'value': 'Fix bugs'}
-        ]
-         },
+        },
+        {'key': 'release', 'child': [
+            {'key': 'version', 'child': [
+                    {'key': 'release', 'value': '4.2.0'},
+                    {'key': 'api', 'value': '4.2.0'}
+                ]
+            },
+            {'key': 'stability', 'child': [
+                    {'key': 'release', 'value': 'stable'},
+                    {'key': 'api', 'value': 'stable'}
+                ]
+            },
+                {'key': 'notes', 'value': 'Fix bugs'}
+            ]
+        },
 
         {'key': 'release', 'child': [
             {'key': 'version', 'child': [
